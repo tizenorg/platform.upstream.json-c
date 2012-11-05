@@ -17,7 +17,6 @@ Patch3:         %{name}-0.9-linkhash.patch
 Patch4:         jsonc-lfs.patch
 BuildRequires:  libtool
 BuildRequires:  pkg-config
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
 JSON-C implements a reference counting object model that allows you to
