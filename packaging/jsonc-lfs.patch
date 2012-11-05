@@ -1,0 +1,81 @@
+Index: json-c-0.9/configure.in
+===================================================================
+--- json-c-0.9.orig/configure.in
++++ json-c-0.9/configure.in
+@@ -6,6 +6,9 @@ AC_INIT([json-c], [0.9], [michael@metapa
+ AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+ 
+ # Checks for programs.
++AC_PROG_CC_STDC
++AC_USE_SYSTEM_EXTENSIONS
++AC_SYS_LARGEFILE
+ 
+ # Checks for libraries.
+ 
+@@ -25,7 +28,7 @@ AC_FUNC_MALLOC
+ AC_FUNC_REALLOC
+ AC_CHECK_FUNCS(strndup strerror vsnprintf vasprintf open vsyslog strncasecmp)
+ 
+-AM_PROG_LIBTOOL
++LT_INIT([disable-static pic-only])
+ 
+ AC_OUTPUT([
+ Makefile
+Index: json-c-0.9/Makefile.am
+===================================================================
+--- json-c-0.9.orig/Makefile.am
++++ json-c-0.9/Makefile.am
+@@ -1,4 +1,4 @@
+-AM_CFLAGS = -Wall -Wwrite-strings -Werror -std=gnu99 -D_GNU_SOURCE -D_REENTRANT
++AM_CFLAGS = -Wall -Wwrite-strings -D_REENTRANT
+ 
+ EXTRA_DIST = README.html README-WIN32.html config.h.win32 doc
+ 
+@@ -20,7 +20,7 @@ libjsoninclude_HEADERS = \
+         json_object_private.h \
+ 	json_tokener.h
+ 
+-libjson_la_LDFLAGS = -version-info 0:1:0
++libjson_la_LDFLAGS = -no-undefined -version-info 0:1:0
+ 
+ libjson_la_SOURCES = \
+ 	arraylist.c \
+Index: json-c-0.9/linkhash.c
+===================================================================
+--- json-c-0.9.orig/linkhash.c
++++ json-c-0.9/linkhash.c
+@@ -9,6 +9,7 @@
+  *
+  */
+ 
++#include "config.h"
+ #include <stdio.h>
+ #include <string.h>
+ #include <stdlib.h>
+Index: json-c-0.9/test1.c
+===================================================================
+--- json-c-0.9.orig/test1.c
++++ json-c-0.9/test1.c
+@@ -1,3 +1,4 @@
++#include "config.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stddef.h>
+Index: json-c-0.9/test2.c
+===================================================================
+--- json-c-0.9.orig/test2.c
++++ json-c-0.9/test2.c
+@@ -1,3 +1,4 @@
++#include "config.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stddef.h>
+Index: json-c-0.9/test3.c
+===================================================================
+--- json-c-0.9.orig/test3.c
++++ json-c-0.9/test3.c
+@@ -1,3 +1,4 @@
++#include "config.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
