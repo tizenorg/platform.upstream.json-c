@@ -10,11 +10,6 @@ Url:            http://oss.metaparadigm.com/%{name}
 Group:          System/Libraries
 Source0:        http://oss.metaparadigm.com/json-c/json-c-0.9.tar.gz
 Source1:        baselibs.conf
-Patch0:         %{name}-0.9-base.patch
-Patch1:         %{name}-0.9-json_object_from_file.patch
-Patch2:         %{name}-0.9-json_tokener.patch
-Patch3:         %{name}-0.9-linkhash.patch
-Patch4:         jsonc-lfs.patch
 BuildRequires:  libtool
 BuildRequires:  pkg-config
 
@@ -42,11 +37,6 @@ using the json-c library
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 
 %build
 autoreconf -fiv
@@ -55,7 +45,6 @@ make %{?_smp_mflags}
 
 %check
 make %{?_smp_mflags} check
-rm -rf %{buildroot}%{_libdir}/*.la
 
 %install
 %make_install
