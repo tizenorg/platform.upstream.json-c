@@ -55,6 +55,7 @@ make %{?_smp_mflags} check
 
 %files -n %{libsoname}
 %defattr(-,root,root)
+%license COPYING
 %{_libdir}/%{libname}.so.*
 
 %files -n %{libname}-devel
