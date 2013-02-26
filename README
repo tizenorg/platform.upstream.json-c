@@ -1,16 +1,24 @@
-Building on Unix with gcc and autotools
+Building on Unix with git, gcc and autotools
 
-If checking out from CVS:
+Home page for json-c:
+  http://oss.metaparadigm.com/json-c/
 
-	sh autogen.sh
+Github repo for json-c:
+  https://github.com/json-c/json-c
 
-Then configure, make, make install
+    $ git clone https://github.com/json-c/json-c.git
+    $ cd json-c
+    $ sh autogen.sh
 
+Then 
 
-Test programs
+    $ ./configure
+    $ make
+    $ make install
 
-To build the test programs run 'make check'
+To build and run the test programs run 
 
+    $ make check
 
 Linking to libjson
 

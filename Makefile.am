@@ -1,6 +1,7 @@
-AM_CFLAGS = -Wall -Wwrite-strings -Werror -std=gnu99 -D_GNU_SOURCE -D_REENTRANT
+include Makefile.am.inc
 
-EXTRA_DIST = README.html README-WIN32.html config.h.win32 doc
+EXTRA_DIST = README.html README-WIN32.html config.h.win32 doc json-c.vcproj
+SUBDIRS = . tests
 
 lib_LTLIBRARIES = libjson.la
 
@@ -9,18 +10,25 @@ pkgconfig_DATA = json.pc
 
 libjsonincludedir = $(includedir)/json
 libjsoninclude_HEADERS = \
-        json.h \
+	arraylist.h \
 	bits.h \
 	debug.h \
-	linkhash.h \
-	arraylist.h \
-        printbuf.h \
-	json_util.h \
+	json.h \
+	json_config.h \
+	json_inttypes.h \
 	json_object.h \
-        json_object_private.h \
-	json_tokener.h
+	json_object_private.h \
+	json_tokener.h \
+	json_util.h \
+	linkhash.h \
+	printbuf.h
 
-libjson_la_LDFLAGS = -version-info 0:1:0
+#libjsonx_includedir = $(libdir)/json-c-@VERSION@
+#
+#libjsonx_include_HEADERS = \
+#	json_config.h
+
+libjson_la_LDFLAGS = -version-info 1:0:1 -no-undefined
 
 libjson_la_SOURCES = \
 	arraylist.c \
@@ -31,13 +39,8 @@ libjson_la_SOURCES = \
 	linkhash.c \
 	printbuf.c
 
-check_PROGRAMS = test1 test2 test3
 
-test1_SOURCES = test1.c
-test1_LDADD = $(lib_LTLIBRARIES)
+distclean-local:
+	-rm -rf $(testsubdir)
+	-rm -rf config.h.in~ Makefile.in aclocal.m4 autom4te.cache/ config.guess config.sub configure depcomp install-sh ltmain.sh missing
 
-test2_SOURCES = test2.c
-test2_LDADD = $(lib_LTLIBRARIES)
-
-test3_SOURCES = test3.c
-test3_LDADD = $(lib_LTLIBRARIES)

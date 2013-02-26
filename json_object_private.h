@@ -18,7 +18,9 @@ extern "C" {
 
 typedef void (json_object_delete_fn)(struct json_object *o);
 typedef int (json_object_to_json_string_fn)(struct json_object *o,
-					    struct printbuf *pb);
+						struct printbuf *pb,
+						int level,
+						int flags);
 
 struct json_object
 {
@@ -28,21 +30,16 @@ struct json_object
   int _ref_count;
   struct printbuf *_pb;
   union data {
-    boolean c_boolean;
+    json_bool c_boolean;
     double c_double;
-    int c_int;
+    int64_t c_int64;
     struct lh_table *c_object;
     struct array_list *c_array;
-    char *c_string;
+    struct {
+        char *str;
+        int len;
+    } c_string;
   } o;
-};
-
-/* CAW: added for ANSI C iteration correctness */
-struct json_object_iter
-{
-	char *key;
-	struct json_object *val;
-	struct lh_entry *entry;
 };
 
 #ifdef __cplusplus
