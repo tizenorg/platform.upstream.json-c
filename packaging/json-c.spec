@@ -1,14 +1,11 @@
-%define libname libjson
-%define libsoname %{libname}
-
 Name:           json-c
-Version:        0.9
+Version:        0.10
 Release:        0
 License:        MIT
 Summary:        JSON implementation in C
 Url:            http://oss.metaparadigm.com/%{name}
 Group:          System/Libraries
-Source0:        http://oss.metaparadigm.com/json-c/json-c-0.9.tar.gz
+Source0:        http://oss.metaparadigm.com/json-c/json-c-%{version}.tar.gz
 Source1:        baselibs.conf
 BuildRequires:  libtool
 BuildRequires:  pkg-config
@@ -19,19 +16,19 @@ easily construct JSON objects in C, output them as JSON formatted
 strings and parse JSON formatted strings back into the C
 representation of JSON objects.
 
-%package -n %{libsoname}
+%package -n libjson
 Summary:        JSON shared lib
 Group:          System/Libraries
 
-%description -n %{libsoname}
+%description -n libjson
 This package includes the JSON library.
 
-%package -n %{libname}-devel
+%package -n libjson-devel
 Summary:        Development headers and libraries for json-c
-Group:          Development/Libraries/C and C++
-Requires:       %{libsoname} = %{version}
+Group:          Development/Libraries
+Requires:       libjson = %{version}
 
-%description -n %{libname}-devel
+%description -n libjson-devel
 This package includes header files and scripts needed for developers
 using the json-c library
 
@@ -49,18 +46,18 @@ make %{?_smp_mflags} check
 %install
 %make_install
 
-%post -n %{libsoname} -p /sbin/ldconfig
+%post -n libjson -p /sbin/ldconfig
 
-%postun -n %{libsoname} -p /sbin/ldconfig
+%postun -n libjson -p /sbin/ldconfig
 
-%files -n %{libsoname}
+%files -n libjson
 %defattr(-,root,root)
 %license COPYING
-%{_libdir}/%{libname}.so.*
+%{_libdir}/libjson.so.*
 
-%files -n %{libname}-devel
+%files -n libjson-devel
 %defattr(-,root,root)
-%{_libdir}/%{libname}.so
+%{_libdir}/libjson.so
 %{_includedir}/json
 %{_libdir}/pkgconfig/*.pc
 
