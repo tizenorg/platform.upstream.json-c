@@ -7,6 +7,7 @@ Url:            http://oss.metaparadigm.com/%{name}
 Group:          System/Libraries
 Source0:        http://oss.metaparadigm.com/json-c/json-c-%{version}.tar.gz
 Source1:        baselibs.conf
+Source1001: 	json-c.manifest
 BuildRequires:  libtool
 BuildRequires:  pkg-config
 
@@ -34,6 +35,7 @@ using the json-c library
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 autoreconf -fiv
@@ -51,11 +53,13 @@ make %{?_smp_mflags} check
 %postun -n libjson -p /sbin/ldconfig
 
 %files -n libjson
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %license COPYING
 %{_libdir}/libjson.so.*
 
 %files -n libjson-devel
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %{_libdir}/libjson.so
 %{_includedir}/json
