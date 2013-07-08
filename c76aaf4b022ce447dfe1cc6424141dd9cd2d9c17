@@ -1,0 +1,8 @@
+Change-Id: Ic76aaf4b022ce447dfe1cc6424141dd9cd2d9c17
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 09:40:39 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4755
+Project: platform/upstream/json-c
+Branch: refs/heads/tizen
