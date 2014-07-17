@@ -212,6 +212,8 @@ char* strndup(const char* str, size_t n)
 #define ADVANCE_CHAR(str, tok) \
   ( ++(str), ((tok)->char_offset)++, c)
 
+#define ADVANCE_CHAR_INCREMENT(str, tok) \
+  ++(str); ((tok)->char_offset)++;
 
 /* End optimization macro defs */
 
@@ -476,8 +478,8 @@ struct json_object* json_tokener_parse_ex(struct json_tokener *tok,
                       (str[1] == '\\') &&
                       (str[2] == 'u'))
                   {
-	            ADVANCE_CHAR(str, tok);
-	            ADVANCE_CHAR(str, tok);
+	            ADVANCE_CHAR_INCREMENT(str, tok);
+	            ADVANCE_CHAR_INCREMENT(str, tok);
 
                     /* Advance to the first char of the next sequence and
                      * continue processing with the next sequence.
