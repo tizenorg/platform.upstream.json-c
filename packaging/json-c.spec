@@ -1,13 +1,14 @@
 Name:           json-c
-Version:        0.10
+Version:        0.11
 Release:        0
 License:        MIT
 Summary:        JSON implementation in C
 Url:            http://oss.metaparadigm.com/%{name}
+#X-Vcs-Url:     https://github.com/json-c/json-c.git
 Group:          System/Libraries
 Source0:        http://oss.metaparadigm.com/json-c/json-c-%{version}.tar.gz
 Source1:        baselibs.conf
-Source1001: 	json-c.manifest
+Source1001:     json-c.manifest
 BuildRequires:  libtool
 BuildRequires:  pkg-config
 
@@ -38,12 +39,12 @@ using the json-c library
 cp %{SOURCE1001} .
 
 %build
-autoreconf -fiv
-%configure --disable-static --with-pic
-make %{?_smp_mflags}
+%reconfigure --disable-static --with-pic
+# Build with "-j1" to prevent an existing race condition
+%__make -j1
 
 %check
-make %{?_smp_mflags} check
+%__make %{?_smp_mflags} check
 
 %install
 %make_install
@@ -56,13 +57,14 @@ make %{?_smp_mflags} check
 %manifest %{name}.manifest
 %defattr(-,root,root)
 %license COPYING
+%{_libdir}/libjson-c.so.*
 %{_libdir}/libjson.so.*
 
 %files -n libjson-devel
 %manifest %{name}.manifest
 %defattr(-,root,root)
+%{_libdir}/libjson-c.so
 %{_libdir}/libjson.so
+%{_includedir}/json-c
 %{_includedir}/json
 %{_libdir}/pkgconfig/*.pc
-
-%changelog
