@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <math.h>
+#include <errno.h>
 
 #include "debug.h"
 #include "printbuf.h"
@@ -25,10 +27,21 @@
 #include "json_object.h"
 #include "json_object_private.h"
 #include "json_util.h"
+#include "math_compat.h"
 
-#if !HAVE_STRNDUP
-  char* strndup(const char* str, size_t n);
-#endif /* !HAVE_STRNDUP */
+#if !defined(HAVE_STRDUP) && defined(_MSC_VER)
+  /* MSC has the version as _strdup */
+# define strdup _strdup
+#elif !defined(HAVE_STRDUP)
+# error You do not have strdup on your system.
+#endif /* HAVE_STRDUP */
+
+#if !defined(HAVE_SNPRINTF) && defined(_MSC_VER)
+  /* MSC has the version as _snprintf */
+# define snprintf _snprintf
+#elif !defined(HAVE_SNPRINTF)
+# error You do not have snprintf on your system.
+#endif /* HAVE_SNPRINTF */
 
 // Don't define this.  It's not thread-safe.
 /* #define REFCOUNT_DEBUG 1 */
@@ -38,6 +51,13 @@ const char *json_hex_chars = "0123456789abcdefABCDEF";
 
 static void json_object_generic_delete(struct json_object* jso);
 static struct json_object* json_object_new(enum json_type o_type);
+
+static json_object_to_json_string_fn json_object_object_to_json_string;
+static json_object_to_json_string_fn json_object_boolean_to_json_string;
+static json_object_to_json_string_fn json_object_int_to_json_string;
+static json_object_to_json_string_fn json_object_double_to_json_string;
+static json_object_to_json_string_fn json_object_string_to_json_string;
+static json_object_to_json_string_fn json_object_array_to_json_string;
 
 
 /* ref count debugging */
@@ -84,6 +104,7 @@ static int json_escape_str(struct printbuf *pb, char *str, int len)
     case '\n':
     case '\r':
     case '\t':
+    case '\f':
     case '"':
     case '\\':
     case '/':
@@ -93,6 +114,7 @@ static int json_escape_str(struct printbuf *pb, char *str, int len)
       else if(c == '\n') printbuf_memappend(pb, "\\n", 2);
       else if(c == '\r') printbuf_memappend(pb, "\\r", 2);
       else if(c == '\t') printbuf_memappend(pb, "\\t", 2);
+      else if(c == '\f') printbuf_memappend(pb, "\\f", 2);
       else if(c == '"') printbuf_memappend(pb, "\\\"", 2);
       else if(c == '\\') printbuf_memappend(pb, "\\\\", 2);
       else if(c == '/') printbuf_memappend(pb, "\\/", 2);
@@ -125,12 +147,20 @@ extern struct json_object* json_object_get(struct json_object *jso)
   return jso;
 }
 
-extern void json_object_put(struct json_object *jso)
+int json_object_put(struct json_object *jso)
 {
-  if(jso) {
-    jso->_ref_count--;
-    if(!jso->_ref_count) jso->_delete(jso);
-  }
+	if(jso)
+	{
+		jso->_ref_count--;
+		if(!jso->_ref_count)
+		{
+			if (jso->_user_delete)
+				jso->_user_delete(jso, jso->_userdata);
+			jso->_delete(jso);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 
@@ -179,6 +209,57 @@ enum json_type json_object_get_type(struct json_object *jso)
     return json_type_null;
   return jso->o_type;
 }
+
+/* set a custom conversion to string */
+
+void json_object_set_serializer(json_object *jso,
+	json_object_to_json_string_fn to_string_func,
+	void *userdata,
+	json_object_delete_fn *user_delete)
+{
+	// First, clean up any previously existing user info
+	if (jso->_user_delete)
+	{
+		jso->_user_delete(jso, jso->_userdata);
+	}
+	jso->_userdata = NULL;
+	jso->_user_delete = NULL;
+
+	if (to_string_func == NULL)
+	{
+		// Reset to the standard serialization function
+		switch(jso->o_type)
+		{
+		case json_type_null:
+			jso->_to_json_string = NULL;
+			break;
+		case json_type_boolean:
+			jso->_to_json_string = &json_object_boolean_to_json_string;
+			break;
+		case json_type_double:
+			jso->_to_json_string = &json_object_double_to_json_string;
+			break;
+		case json_type_int:
+			jso->_to_json_string = &json_object_int_to_json_string;
+			break;
+		case json_type_object:
+			jso->_to_json_string = &json_object_object_to_json_string;
+			break;
+		case json_type_array:
+			jso->_to_json_string = &json_object_array_to_json_string;
+			break;
+		case json_type_string:
+			jso->_to_json_string = &json_object_string_to_json_string;
+			break;
+		}
+		return;
+	}
+
+	jso->_to_json_string = to_string_func;
+	jso->_userdata = userdata;
+	jso->_user_delete = user_delete;
+}
+
 
 /* extended conversion to string */
 
@@ -299,35 +380,56 @@ struct lh_table* json_object_get_object(struct json_object *jso)
 void json_object_object_add(struct json_object* jso, const char *key,
 			    struct json_object *val)
 {
-  lh_table_delete(jso->o.c_object, key);
-  lh_table_insert(jso->o.c_object, strdup(key), val);
+	// We lookup the entry and replace the value, rather than just deleting
+	// and re-adding it, so the existing key remains valid.
+	json_object *existing_value = NULL;
+	struct lh_entry *existing_entry;
+	existing_entry = lh_table_lookup_entry(jso->o.c_object, (void*)key);
+	if (!existing_entry)
+	{
+		lh_table_insert(jso->o.c_object, strdup(key), val);
+		return;
+	}
+	existing_value = (void *)existing_entry->v;
+	if (existing_value)
+		json_object_put(existing_value);
+	existing_entry->v = val;
+}
+
+int json_object_object_length(struct json_object *jso)
+{
+	return lh_table_length(jso->o.c_object);
 }
 
 struct json_object* json_object_object_get(struct json_object* jso, const char *key)
 {
-  struct json_object *result;
-  json_object_object_get_ex(jso, key, &result);
-  return result;
+	struct json_object *result = NULL;
+	json_object_object_get_ex(jso, key, &result);
+	return result;
 }
 
 json_bool json_object_object_get_ex(struct json_object* jso, const char *key, struct json_object **value)
 {
-  if (NULL == jso) return FALSE;
+	if (value != NULL)
+		*value = NULL;
 
-  switch(jso->o_type) {
-  case json_type_object:
-    return lh_table_lookup_ex(jso->o.c_object, (void*)key, (void**)value);
-  default:
-    if (value != NULL) {
-      *value = NULL;
-    }
-    return FALSE;
-  }
+	if (NULL == jso)
+		return FALSE;
+
+	switch(jso->o_type)
+	{
+	case json_type_object:
+		return lh_table_lookup_ex(jso->o.c_object, (void*)key, (void**)value);
+	default:
+		if (value != NULL)
+			*value = NULL;
+		return FALSE;
+	}
 }
 
 void json_object_object_del(struct json_object* jso, const char *key)
 {
-  lh_table_delete(jso->o.c_object, key);
+	lh_table_delete(jso->o.c_object, key);
 }
 
 
@@ -463,21 +565,80 @@ static int json_object_double_to_json_string(struct json_object* jso,
 					     int level,
 						 int flags)
 {
-  return sprintbuf(pb, "%f", jso->o.c_double);
+  char buf[128], *p, *q;
+  int size;
+  /* Although JSON RFC does not support
+     NaN or Infinity as numeric values
+     ECMA 262 section 9.8.1 defines
+     how to handle these cases as strings */
+  if(isnan(jso->o.c_double))
+    size = snprintf(buf, sizeof(buf), "NaN");
+  else if(isinf(jso->o.c_double))
+    if(jso->o.c_double > 0)
+      size = snprintf(buf, sizeof(buf), "Infinity");
+    else
+      size = snprintf(buf, sizeof(buf), "-Infinity");
+  else
+    size = snprintf(buf, sizeof(buf), "%.17g", jso->o.c_double);
+
+  p = strchr(buf, ',');
+  if (p) {
+    *p = '.';
+  } else {
+    p = strchr(buf, '.');
+  }
+  if (p && (flags & JSON_C_TO_STRING_NOZERO)) {
+    /* last useful digit, always keep 1 zero */
+    p++;
+    for (q=p ; *q ; q++) {
+      if (*q!='0') p=q;
+    }
+    /* drop trailing zeroes */
+    *(++p) = 0;
+    size = p-buf;
+  }
+  printbuf_memappend(pb, buf, size);
+  return size;
 }
 
 struct json_object* json_object_new_double(double d)
 {
-  struct json_object *jso = json_object_new(json_type_double);
-  if(!jso) return NULL;
-  jso->_to_json_string = &json_object_double_to_json_string;
-  jso->o.c_double = d;
-  return jso;
+	struct json_object *jso = json_object_new(json_type_double);
+	if (!jso)
+		return NULL;
+	jso->_to_json_string = &json_object_double_to_json_string;
+	jso->o.c_double = d;
+	return jso;
+}
+
+struct json_object* json_object_new_double_s(double d, const char *ds)
+{
+	struct json_object *jso = json_object_new_double(d);
+	if (!jso)
+		return NULL;
+
+	json_object_set_serializer(jso, json_object_userdata_to_json_string,
+	    strdup(ds), json_object_free_userdata);
+	return jso;
+}
+
+int json_object_userdata_to_json_string(struct json_object *jso,
+	struct printbuf *pb, int level, int flags)
+{
+	int userdata_len = strlen(jso->_userdata);
+	printbuf_memappend(pb, jso->_userdata, userdata_len);
+	return userdata_len;
+}
+
+void json_object_free_userdata(struct json_object *jso, void *userdata)
+{
+	free(userdata);
 }
 
 double json_object_get_double(struct json_object *jso)
 {
   double cdouble;
+  char *errPtr = NULL;
 
   if(!jso) return 0.0;
   switch(jso->o_type) {
@@ -488,7 +649,36 @@ double json_object_get_double(struct json_object *jso)
   case json_type_boolean:
     return jso->o.c_boolean;
   case json_type_string:
-    if(sscanf(jso->o.c_string.str, "%lf", &cdouble) == 1) return cdouble;
+    errno = 0;
+    cdouble = strtod(jso->o.c_string.str,&errPtr);
+
+    /* if conversion stopped at the first character, return 0.0 */
+    if (errPtr == jso->o.c_string.str)
+        return 0.0;
+
+    /*
+     * Check that the conversion terminated on something sensible
+     *
+     * For example, { "pay" : 123AB } would parse as 123.
+     */
+    if (*errPtr != '\0')
+        return 0.0;
+
+    /*
+     * If strtod encounters a string which would exceed the
+     * capacity of a double, it returns +/- HUGE_VAL and sets
+     * errno to ERANGE. But +/- HUGE_VAL is also a valid result
+     * from a conversion, so we need to check errno.
+     *
+     * Underflow also sets errno to ERANGE, but it returns 0 in
+     * that case, which is what we will return anyway.
+     *
+     * See CERT guideline ERR30-C
+     */
+    if ((HUGE_VAL == cdouble || -HUGE_VAL == cdouble) &&
+        (ERANGE == errno))
+            cdouble = 0.0;
+    return cdouble;
   default:
     return 0.0;
   }
@@ -531,8 +721,9 @@ struct json_object* json_object_new_string_len(const char *s, int len)
   if(!jso) return NULL;
   jso->_delete = &json_object_string_delete;
   jso->_to_json_string = &json_object_string_to_json_string;
-  jso->o.c_string.str = malloc(len);
+  jso->o.c_string.str = (char*)malloc(len + 1);
   memcpy(jso->o.c_string.str, (void *)s, len);
+  jso->o.c_string.str[len] = '\0';
   jso->o.c_string.len = len;
   return jso;
 }

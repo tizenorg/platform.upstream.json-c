@@ -246,7 +246,7 @@ extern struct lh_entry* lh_table_lookup_entry(struct lh_table *t, const void *k)
  * @return a pointer to the found value or NULL if it does not exist.
  * @deprecated Use lh_table_lookup_ex instead.
  */
-extern const void* lh_table_lookup(struct lh_table *t, const void *k);
+THIS_FUNCTION_IS_DEPRECATED(extern const void* lh_table_lookup(struct lh_table *t, const void *k));
 
 /**
  * Lookup a record in the table
@@ -280,6 +280,7 @@ extern int lh_table_delete_entry(struct lh_table *t, struct lh_entry *e);
  */
 extern int lh_table_delete(struct lh_table *t, const void *k);
 
+extern int lh_table_length(struct lh_table *t);
 
 void lh_abort(const char *msg, ...);
 void lh_table_resize(struct lh_table *t, int new_size);

@@ -25,83 +25,115 @@ int main(int argc, char **argv)
 
 static void test_basic_parse()
 {
-  json_object *new_obj;
+	json_object *new_obj;
 
-  new_obj = json_tokener_parse("\"\003\"");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("\"\003\"");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("/* hello */\"foo\"");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("/* hello */\"foo\"");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("// hello\n\"foo\"");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("// hello\n\"foo\"");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("\"\\u0041\\u0042\\u0043\"");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("\"\\u0041\\u0042\\u0043\"");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("null");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("null");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("True");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("NaN");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("12");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("-NaN"); /* non-sensical, returns null */
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("12.3");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("Inf"); /* must use full string, returns null */
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[\"\\n\"]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("inf"); /* must use full string, returns null */
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[\"\\nabc\\n\"]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("Infinity");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[null]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("infinity");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("-Infinity");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[false]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("-infinity");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("[\"abc\",null,\"def\",12]");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("True");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("{}");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("12");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("{ \"foo\": \"bar\" }");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("12.3");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("{ \"foo\": \"bar\", \"baz\": null, \"bool0\": true }");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("[\"\\n\"]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("{ \"foo\": [null, \"foo\"] }");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("[\"\\nabc\\n\"]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 
-  new_obj = json_tokener_parse("{ \"abc\": 12, \"foo\": \"bar\", \"bool0\": false, \"bool1\": true, \"arr\": [ 1, 2, 3, null, 5 ] }");
-  printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
-  json_object_put(new_obj);
+	new_obj = json_tokener_parse("[null]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("[]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("[false]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("[\"abc\",null,\"def\",12]");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("{}");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("{ \"foo\": \"bar\" }");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("{ \"foo\": \"bar\", \"baz\": null, \"bool0\": true }");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("{ \"foo\": [null, \"foo\"] }");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
+
+	new_obj = json_tokener_parse("{ \"abc\": 12, \"foo\": \"bar\", \"bool0\": false, \"bool1\": true, \"arr\": [ 1, 2, 3, null, 5 ] }");
+	printf("new_obj.to_string()=%s\n", json_object_to_json_string(new_obj));
+	json_object_put(new_obj);
 }
 
 static void test_verbose_parse()
@@ -121,7 +153,7 @@ static void test_verbose_parse()
 	new_obj = json_tokener_parse_verbose("foo", &error);
 	assert (new_obj == NULL);
 
- 	/* b/c the string starts with 'f' parsing return a boolean error */
+	/* b/c the string starts with 'f' parsing return a boolean error */
 	assert (error == json_tokener_error_parse_boolean);
 
 	printf("json_tokener_parse_versbose() OK\n");
@@ -166,6 +198,15 @@ struct incremental_step {
 	/* Strings have a well defined end point, so we can stop at the quote */
 	{ "\"blue\"",         -1, -1, json_tokener_success, 0 },
 
+	/* Check each of the escape sequences defined by the spec */
+	{ "\"\\\"\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\\\\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\b\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\f\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\n\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\r\"",         -1, -1, json_tokener_success, 0 },
+	{ "\"\\t\"",         -1, -1, json_tokener_success, 0 },
+
 	{ "[1,2,3]",          -1, -1, json_tokener_success, 0 },
 
 	/* This behaviour doesn't entirely follow the json spec, but until we have
@@ -174,7 +215,10 @@ struct incremental_step {
 	{ "[1,2,3,]",         -1, -1, json_tokener_success, 0 },
 	{ "[1,2,,3,]",        -1, 5, json_tokener_error_parse_unexpected, 0 },
 
-	{ NULL, json_tokener_success },
+	{ "[1,2,3,]",         -1, 7, json_tokener_error_parse_unexpected, 3 },
+	{ "{\"a\":1,}",         -1, 7, json_tokener_error_parse_unexpected, 3 },
+
+	{ NULL, -1, -1, json_tokener_success, 0 },
 };
 
 static void test_incremental_parse()
@@ -190,6 +234,8 @@ static void test_incremental_parse()
 	num_error = 0;
 
 	printf("Starting incremental tests.\n");
+	printf("Note: quotes and backslashes seen in the output here are literal values passed\n");
+	printf("     to the parse functions.  e.g. this is 4 characters: \"\\f\"\n");
 
 	string_to_parse = "{ \"foo"; /* } */
 	printf("json_tokener_parse(%s) ... ", string_to_parse);
@@ -204,6 +250,12 @@ static void test_incremental_parse()
 		struct incremental_step *step = &incremental_steps[ii];
 		int length = step->length;
 		int expected_char_offset = step->char_offset;
+
+		if (step->reset_tokener & 2)
+			json_tokener_set_flags(tok, JSON_TOKENER_STRICT);
+		else
+			json_tokener_set_flags(tok, 0);
+
 		if (length == -1)
 			length = strlen(step->string_to_parse);
 		if (expected_char_offset == -1)
@@ -253,7 +305,7 @@ static void test_incremental_parse()
 		if (new_obj)
 			json_object_put(new_obj);
 
-		if (step->reset_tokener)
+		if (step->reset_tokener & 1)
 			json_tokener_reset(tok);
 
 		if (this_step_ok)

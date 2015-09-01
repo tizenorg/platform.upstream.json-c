@@ -14,7 +14,7 @@ static void test_printbuf_memset_length(void);
 static void test_basic_printbuf_memset()
 {
 	struct printbuf *pb;
-	
+
 	printf("%s: starting test\n", __func__);
 	pb = printbuf_new();
 	sprintbuf(pb, "blue:%d", 1);
@@ -86,7 +86,7 @@ static void test_printbuf_memappend(int *before_resize)
 
 	char with_nulls[] = { 'a', 'b', '\0', 'c' };
 	printbuf_reset(pb);
-	printbuf_memappend_fast(pb, with_nulls, sizeof(with_nulls));
+	printbuf_memappend_fast(pb, with_nulls, (int)sizeof(with_nulls));
 	printf("With embedded \\0 character: %d, [%s]\n", printbuf_length(pb), pb->buf);
 
 	printbuf_free(pb);
@@ -104,7 +104,7 @@ static void test_printbuf_memappend(int *before_resize)
 	memset(data, 'X', *before_resize + 1);
 	printbuf_memappend_fast(pb, data, *before_resize + 1);
 	printf("Append to just after resize: %d, [%s]\n", printbuf_length(pb), pb->buf);
-	
+
 	free(data);
 
 	printbuf_free(pb);
@@ -124,7 +124,8 @@ static void test_sprintbuf(int before_resize)
 	memset(data, 'X', before_resize + 1 + 1);
 	data[before_resize + 1] = '\0';
 	sprintbuf(pb, "%s", data);
-	printf("sprintbuf to just after resize(%d+1): %d, [%s], strlen(buf)=%d\n", before_resize, printbuf_length(pb), pb->buf, strlen(pb->buf));
+	free(data);
+	printf("sprintbuf to just after resize(%d+1): %d, [%s], strlen(buf)=%d\n", before_resize, printbuf_length(pb), pb->buf, (int)strlen(pb->buf));
 
 	printbuf_reset(pb);
 	sprintbuf(pb, "plain");
