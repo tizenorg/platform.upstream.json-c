@@ -73,7 +73,7 @@ struct json_object* json_object_from_file(const char *filename)
   int fd, ret;
 
   if((fd = open(filename, O_RDONLY)) < 0) {
-    MC_ERROR("json_object_from_file: error reading file %s: %s\n",
+    MC_ERROR("json_object_from_file: error opening file %s: %s\n",
 	     filename, strerror(errno));
     return NULL;
   }
@@ -87,7 +87,7 @@ struct json_object* json_object_from_file(const char *filename)
   }
   close(fd);
   if(ret < 0) {
-    MC_ABORT("json_object_from_file: error reading file %s: %s\n",
+    MC_ERROR("json_object_from_file: error reading file %s: %s\n",
 	     filename, strerror(errno));
     printbuf_free(pb);
     return NULL;
@@ -99,7 +99,7 @@ struct json_object* json_object_from_file(const char *filename)
 
 /* extended "format and write to file" function */
 
-int json_object_to_file_ext(char *filename, struct json_object *obj, int flags)
+int json_object_to_file_ext(const char *filename, struct json_object *obj, int flags)
 {
   const char *json_str;
   int fd, ret;
@@ -141,7 +141,7 @@ int json_object_to_file_ext(char *filename, struct json_object *obj, int flags)
 
 // backwards compatible "format and write to file" function
 
-int json_object_to_file(char *filename, struct json_object *obj)
+int json_object_to_file(const char *filename, struct json_object *obj)
 {
   return json_object_to_file_ext(filename, obj, JSON_C_TO_STRING_PLAIN);
 }
@@ -159,14 +159,15 @@ int json_parse_double(const char *buf, double *retval)
 static void sscanf_is_broken_test()
 {
 	int64_t num64;
+	int ret_errno, is_int64_min, ret_errno2, is_int64_max;
 
 	(void)sscanf(" -01234567890123456789012345", "%" SCNd64, &num64);
-	int ret_errno = errno;
-	int is_int64_min = (num64 == INT64_MIN);
+	ret_errno = errno;
+	is_int64_min = (num64 == INT64_MIN);
 
 	(void)sscanf(" 01234567890123456789012345", "%" SCNd64, &num64);
-	int ret_errno2 = errno;
-	int is_int64_max = (num64 == INT64_MAX);
+	ret_errno2 = errno;
+	is_int64_max = (num64 == INT64_MAX);
 
 	if (ret_errno != ERANGE || !is_int64_min ||
 	    ret_errno2 != ERANGE || !is_int64_max)

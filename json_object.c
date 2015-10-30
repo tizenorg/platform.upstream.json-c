@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <math.h>
+#include <errno.h>
 
 #include "debug.h"
 #include "printbuf.h"
@@ -25,6 +27,7 @@
 #include "json_object.h"
 #include "json_object_private.h"
 #include "json_util.h"
+#include "math_compat.h"
 
 #if !defined(HAVE_STRDUP) && defined(_MSC_VER)
   /* MSC has the version as _strdup */
@@ -33,9 +36,12 @@
 # error You do not have strdup on your system.
 #endif /* HAVE_STRDUP */
 
-#if !defined(HAVE_STRNDUP)
-  char* strndup(const char* str, size_t n);
-#endif /* !HAVE_STRNDUP */
+#if !defined(HAVE_SNPRINTF) && defined(_MSC_VER)
+  /* MSC has the version as _snprintf */
+# define snprintf _snprintf
+#elif !defined(HAVE_SNPRINTF)
+# error You do not have snprintf on your system.
+#endif /* HAVE_SNPRINTF */
 
 // Don't define this.  It's not thread-safe.
 /* #define REFCOUNT_DEBUG 1 */
@@ -197,7 +203,7 @@ int json_object_is_type(struct json_object *jso, enum json_type type)
   return (jso->o_type == type);
 }
 
-enum json_type _json_object_get_type(struct json_object *jso)
+enum json_type json_object_get_type(struct json_object *jso)
 {
   if (!jso)
     return json_type_null;
@@ -561,8 +567,20 @@ static int json_object_double_to_json_string(struct json_object* jso,
 {
   char buf[128], *p, *q;
   int size;
+  /* Although JSON RFC does not support
+     NaN or Infinity as numeric values
+     ECMA 262 section 9.8.1 defines
+     how to handle these cases as strings */
+  if(isnan(jso->o.c_double))
+    size = snprintf(buf, sizeof(buf), "NaN");
+  else if(isinf(jso->o.c_double))
+    if(jso->o.c_double > 0)
+      size = snprintf(buf, sizeof(buf), "Infinity");
+    else
+      size = snprintf(buf, sizeof(buf), "-Infinity");
+  else
+    size = snprintf(buf, sizeof(buf), "%.17g", jso->o.c_double);
 
-  size = snprintf(buf, 128, "%f", jso->o.c_double);
   p = strchr(buf, ',');
   if (p) {
     *p = '.';
@@ -585,16 +603,42 @@ static int json_object_double_to_json_string(struct json_object* jso,
 
 struct json_object* json_object_new_double(double d)
 {
-  struct json_object *jso = json_object_new(json_type_double);
-  if(!jso) return NULL;
-  jso->_to_json_string = &json_object_double_to_json_string;
-  jso->o.c_double = d;
-  return jso;
+	struct json_object *jso = json_object_new(json_type_double);
+	if (!jso)
+		return NULL;
+	jso->_to_json_string = &json_object_double_to_json_string;
+	jso->o.c_double = d;
+	return jso;
+}
+
+struct json_object* json_object_new_double_s(double d, const char *ds)
+{
+	struct json_object *jso = json_object_new_double(d);
+	if (!jso)
+		return NULL;
+
+	json_object_set_serializer(jso, json_object_userdata_to_json_string,
+	    strdup(ds), json_object_free_userdata);
+	return jso;
+}
+
+int json_object_userdata_to_json_string(struct json_object *jso,
+	struct printbuf *pb, int level, int flags)
+{
+	int userdata_len = strlen(jso->_userdata);
+	printbuf_memappend(pb, jso->_userdata, userdata_len);
+	return userdata_len;
+}
+
+void json_object_free_userdata(struct json_object *jso, void *userdata)
+{
+	free(userdata);
 }
 
 double json_object_get_double(struct json_object *jso)
 {
   double cdouble;
+  char *errPtr = NULL;
 
   if(!jso) return 0.0;
   switch(jso->o_type) {
@@ -605,7 +649,36 @@ double json_object_get_double(struct json_object *jso)
   case json_type_boolean:
     return jso->o.c_boolean;
   case json_type_string:
-    if(sscanf(jso->o.c_string.str, "%lf", &cdouble) == 1) return cdouble;
+    errno = 0;
+    cdouble = strtod(jso->o.c_string.str,&errPtr);
+
+    /* if conversion stopped at the first character, return 0.0 */
+    if (errPtr == jso->o.c_string.str)
+        return 0.0;
+
+    /*
+     * Check that the conversion terminated on something sensible
+     *
+     * For example, { "pay" : 123AB } would parse as 123.
+     */
+    if (*errPtr != '\0')
+        return 0.0;
+
+    /*
+     * If strtod encounters a string which would exceed the
+     * capacity of a double, it returns +/- HUGE_VAL and sets
+     * errno to ERANGE. But +/- HUGE_VAL is also a valid result
+     * from a conversion, so we need to check errno.
+     *
+     * Underflow also sets errno to ERANGE, but it returns 0 in
+     * that case, which is what we will return anyway.
+     *
+     * See CERT guideline ERR30-C
+     */
+    if ((HUGE_VAL == cdouble || -HUGE_VAL == cdouble) &&
+        (ERANGE == errno))
+            cdouble = 0.0;
+    return cdouble;
   default:
     return 0.0;
   }

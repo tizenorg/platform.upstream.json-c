@@ -33,7 +33,8 @@ enum json_tokener_error {
   json_tokener_error_parse_object_key_sep,
   json_tokener_error_parse_object_value_sep,
   json_tokener_error_parse_string,
-  json_tokener_error_parse_comment
+  json_tokener_error_parse_comment,
+  json_tokener_error_size
 };
 
 enum json_tokener_state {
@@ -60,7 +61,8 @@ enum json_tokener_state {
   json_tokener_state_object_value_add,
   json_tokener_state_object_sep,
   json_tokener_state_array_after_sep,
-  json_tokener_state_object_field_start_after_sep
+  json_tokener_state_object_field_start_after_sep,
+  json_tokener_state_inf
 };
 
 struct json_tokener_srec
@@ -104,14 +106,6 @@ struct json_tokener
  * @return a generic error message is returned if an invalid error value is provided.
  */
 const char *json_tokener_error_desc(enum json_tokener_error jerr);
-
-/** 
- * @b XXX do not use json_tokener_errors directly.  
- * After v0.10 this will be removed.
- *
- * See json_tokener_error_desc() instead.
- */
-extern const char* json_tokener_errors[];
 
 /**
  * Retrieve the error caused by the last call to json_tokener_parse_ex(),
@@ -169,6 +163,11 @@ extern void json_tokener_set_flags(struct json_tokener *tok, int flags);
  * The tokener does \b not maintain an internal buffer so the caller is
  * responsible for calling json_tokener_parse_ex with an appropriate str
  * parameter starting with the extra characters.
+ *
+ * This interface is presently not 64-bit clean due to the int len argument
+ * so the function limits the maximum string size to INT32_MAX (2GB).
+ * If the function is called with len == -1 then strlen is called to check
+ * the string length is less than INT32_MAX (2GB)
  *
  * Example:
  * @code
