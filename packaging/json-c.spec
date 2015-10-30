@@ -1,10 +1,9 @@
 Name:           json-c
-Version:        0.11
+Version:        0.12
 Release:        0
 License:        MIT
 Summary:        JSON implementation in C
 Url:            http://oss.metaparadigm.com/%{name}
-#X-Vcs-Url:     https://github.com/json-c/json-c.git
 Group:          System/Libraries
 Source0:        http://oss.metaparadigm.com/json-c/json-c-%{version}.tar.gz
 Source1:        baselibs.conf
@@ -49,6 +48,10 @@ cp %{SOURCE1001} .
 %install
 %make_install
 
+# LICENSE
+mkdir -p %{buildroot}/usr/share/license
+cp -af COPYING %{buildroot}/usr/share/license/%{name}
+
 %post -n libjson -p /sbin/ldconfig
 
 %postun -n libjson -p /sbin/ldconfig
@@ -56,15 +59,12 @@ cp %{SOURCE1001} .
 %files -n libjson
 %manifest %{name}.manifest
 %defattr(-,root,root)
-%license COPYING
+%{_datadir}/license/%{name}
 %{_libdir}/libjson-c.so.*
-%{_libdir}/libjson.so.*
 
 %files -n libjson-devel
 %manifest %{name}.manifest
 %defattr(-,root,root)
 %{_libdir}/libjson-c.so
-%{_libdir}/libjson.so
 %{_includedir}/json-c
-%{_includedir}/json
 %{_libdir}/pkgconfig/*.pc

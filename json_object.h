@@ -111,7 +111,7 @@ typedef enum json_type {
 /* reference counting functions */
 
 /**
- * Increment the reference count of json_object, thereby grabbing shared 
+ * Increment the reference count of json_object, thereby grabbing shared
  * ownership of obj.
  *
  * @param obj the json_object instance
@@ -156,6 +156,7 @@ extern int json_object_is_type(struct json_object *obj, enum json_type type);
      json_type_array,
      json_type_string,
  */
+#define json_object_get_type _json_object_get_type
 extern enum json_type json_object_get_type(struct json_object *obj);
 
 
@@ -178,7 +179,7 @@ flags);
  * Set a custom serialization function to be used when this particular object
  * is converted to a string by json_object_to_json_string.
  *
- * If a custom serializer is already set on this object, any existing 
+ * If a custom serializer is already set on this object, any existing
  * user_delete function is called before the new one is set.
  *
  * If to_string_func is NULL, the other parameters are ignored
@@ -290,9 +291,9 @@ extern void json_object_object_add(struct json_object* obj, const char *key,
 THIS_FUNCTION_IS_DEPRECATED(extern struct json_object* json_object_object_get(struct json_object* obj,
 						  const char *key));
 
-/** Get the json_object associated with a given object field.  
+/** Get the json_object associated with a given object field.
  *
- * This returns true if the key is found, false in all other cases (including 
+ * This returns true if the key is found, false in all other cases (including
  * if obj isn't a json_type_object).
  *
  * *No* reference counts will be changed.  There is no need to manually adjust
@@ -302,7 +303,7 @@ THIS_FUNCTION_IS_DEPRECATED(extern struct json_object* json_object_object_get(st
  *
  * @param obj the json_object instance
  * @param key the object field name
- * @param value a pointer where to store a reference to the json_object 
+ * @param value a pointer where to store a reference to the json_object
  *              associated with the given field name.
  *
  *              It is safe to pass a NULL value.
@@ -339,8 +340,8 @@ extern void json_object_object_del(struct json_object* obj, const char *key);
 #if defined(__GNUC__) && !defined(__STRICT_ANSI__) && __STDC_VERSION__ >= 199901L
 
 # define json_object_object_foreach(obj,key,val) \
-	char *key; \
-	struct json_object *val __attribute__((__unused__)); \
+	char *key = NULL; \
+	struct json_object *val = NULL; \
 	for(struct lh_entry *entry ## key = json_object_get_object(obj)->head, *entry_next ## key = NULL; \
 		({ if(entry ## key) { \
 			key = (char*)entry ## key->k; \
