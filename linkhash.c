@@ -262,7 +262,7 @@ static uint32_t hashlittle( const void *key, size_t length, uint32_t initval)
      * still catch it and complain.  The masking trick does make the hash
      * noticably faster for short strings (like English words).
      */
-#ifndef VALGRIND
+#if !defined(VALGRIND) && !defined(__SANITIZE_ADDRESS__)
 
     switch(length)
     {
